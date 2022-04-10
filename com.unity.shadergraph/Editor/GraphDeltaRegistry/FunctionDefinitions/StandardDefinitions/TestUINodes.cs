@@ -1,13 +1,16 @@
 using System;
+using System.Collections.Generic;
 using UnityEditor.ShaderGraph.GraphDelta;
 
 namespace UnityEditor.ShaderGraph.Defs
 {
     internal class TestMultiFunctionNode : IStandardNode
     {
+        static int Version = 1;
+        static string Name = "TestMultiFuctionNode";
         public static NodeDescriptor NodeDescriptor => new(
-            1,
-            "TestMultiFuctionNode",
+            Version,
+            Name,
             new FunctionDescriptor[] {
                 new(
                     1,
@@ -27,6 +30,21 @@ namespace UnityEditor.ShaderGraph.Defs
                     new ParameterDescriptor("Local", TYPE.Int, GraphType.Usage.Local),
                     new ParameterDescriptor("Out", TYPE.Int, GraphType.Usage.Out)
                 )
+            }
+        );
+
+        public static NodeUIDescriptor NodeUIDescriptor => new(
+            Version,
+            Name,
+            tooltip: "",
+            categories: new string[1] { "testing" },
+            synonyms: new string[0],
+            displayName: "Test MultiFunction Node",
+            hasPreview: false,
+            selectableFunctions: new ()
+            {
+                { "Function1", "Function One" },
+                { "Function2", "Function Two" }
             }
         );
     }
