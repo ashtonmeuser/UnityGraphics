@@ -40,8 +40,10 @@ namespace UnityEditor.ShaderGraph.Defs
             Synonyms = synonyms.ToList().AsReadOnly();
             Categories = categories.ToList().AsReadOnly();
             HasPreview = hasPreview;
-            SelectableFunctions = new ReadOnlyDictionary<string, string>(selectableFunctions);
-            Parameters = parameters.ToList().AsReadOnly();
+            var functionDictionary = selectableFunctions ?? new Dictionary<string, string>();
+            SelectableFunctions = new ReadOnlyDictionary<string, string>(functionDictionary);
+            var parametersList = parameters ?? new ParameterUIDescriptor[0];
+            Parameters = parametersList.ToList().AsReadOnly();
         }
 
         public ParameterUIDescriptor GetParameterInfo(string parameterName)
