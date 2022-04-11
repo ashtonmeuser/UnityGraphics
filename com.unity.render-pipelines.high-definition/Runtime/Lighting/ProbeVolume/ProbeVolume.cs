@@ -1619,26 +1619,11 @@ namespace UnityEngine.Rendering.HighDefinition
             return new Vector4(probeOctahedralDepthScale2D.x, probeOctahedralDepthScale2D.y, probeOctahedralDepthIndex2D.x, probeOctahedralDepthIndex2D.y);
         }
 
-        static bool s_PrepareMixedLights = false;
+        static bool s_PrepareMixedLights;
         internal static bool prepareMixedLights
         {
             get => s_PrepareMixedLights;
-            set
-            {
-                s_PrepareMixedLights = value;
-                if (value)
-                {
-                    foreach (var light in HDAdditionalLightData.s_InstancesHDAdditionalLightData)
-                    {
-                        var mixedDynamicGI = light.lightmapBakeType == LightmapBakeType.Mixed;
-                        if (light.mixedDynamicGI != mixedDynamicGI)
-                        {
-                            light.mixedDynamicGI = mixedDynamicGI;
-                            UnityEditor.EditorUtility.SetDirty(light);
-                        }
-                    }
-                }
-            }
+            set => s_PrepareMixedLights = value;
         }
 #endif
     }

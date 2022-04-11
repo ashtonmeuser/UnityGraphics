@@ -2555,7 +2555,15 @@ namespace UnityEngine.Rendering.HighDefinition
 #if UNITY_EDITOR
                 if (ProbeVolume.prepareMixedLights)
                 {
-                    if (!additionalData.mixedDynamicGI)
+                    var mixedDynamicGI = light.light.lightmapBakeType == LightmapBakeType.Mixed;
+                    
+                    if (additionalData.mixedDynamicGI != mixedDynamicGI)
+                    {
+                        additionalData.mixedDynamicGI = mixedDynamicGI;
+                        UnityEditor.EditorUtility.SetDirty(additionalData);
+                    }
+                    
+                    if (!mixedDynamicGI)
                         continue;
                 }
                 else
