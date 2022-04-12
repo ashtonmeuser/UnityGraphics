@@ -518,7 +518,8 @@ namespace UnityEngine.Rendering.HighDefinition
         internal void DispatchProbePropagation(CommandBuffer cmd, ProbeVolumeHandle probeVolume,
             ProbeDynamicGI giSettings, in ShaderVariablesGlobal shaderGlobals,
             RenderTargetIdentifier probeVolumeAtlasSHRTHandle, bool infiniteBounces,
-            PropagationQuality propagationQuality, SphericalHarmonicsL2 ambientProbe)
+            PropagationQuality propagationQuality, SphericalHarmonicsL2 ambientProbe,
+            ProbeVolumeDynamicGIMixedLightMode mixedLightMode)
         {
             var previousRadianceCacheInvalid = InitializePropagationBuffers(probeVolume);
             if (previousRadianceCacheInvalid || giSettings.clear.value || _clearAllActive)
@@ -530,7 +531,7 @@ namespace UnityEngine.Rendering.HighDefinition
             if (probeVolume.HitNeighborAxisLength != 0)
             {
                 using (new ProfilingScope(cmd, ProfilingSampler.Get(HDProfileId.ProbeVolumeDynamicGIHits)))
-                    DispatchPropagationHits(cmd, probeVolume, in giSettings, infiniteBounces, previousRadianceCacheInvalid);
+                    DispatchPropagationHits(cmd, probeVolume, in giSettings, infiniteBounces, previousRadianceCacheInvalid, mixedLightMode);
             }
 
             using (new ProfilingScope(cmd, ProfilingSampler.Get(HDProfileId.ProbeVolumeDynamicGIAxes)))
@@ -576,7 +577,8 @@ namespace UnityEngine.Rendering.HighDefinition
             cmd.DispatchCompute(shader, kernel, dispatchX, 1, 1);
         }
 
-        void DispatchPropagationHits(CommandBuffer cmd, ProbeVolumeHandle probeVolume, in ProbeDynamicGI giSettings, bool infiniteBounces, bool previousRadianceCacheInvalid)
+        void DispatchPropagationHits(CommandBuffer cmd, ProbeVolumeHandle probeVolume, in ProbeDynamicGI giSettings, bool infiniteBounces,
+            bool previousRadianceCacheInvalid, ProbeVolumeDynamicGIMixedLightMode mixedLightMode)
         {
             var kernel = _PropagationHitsShader.FindKernel("AccumulateLightingDirectional");
             var shader = _PropagationHitsShader;
@@ -611,22 +613,25 @@ namespace UnityEngine.Rendering.HighDefinition
             if (ProbeVolume.prepareMixedLights)
             {
                 cmd.SetComputeFloatParam(shader, "_IndirectScale", 1f);
-                cmd.SetComputeFloatParam(shader, "_BakedEmissionMultiplier", 0f);
                 cmd.SetComputeFloatParam(shader, "_MixedLightingMultiplier", 0f);
+                cmd.SetComputeFloatParam(shader, "_BakedEmissionMultiplier", 0f);
                 infBounce = 0f;
+
+                cmd.SetComputeFloatParam(shader, "_RangeBehindCamera", float.MaxValue);
+                cmd.SetComputeFloatParam(shader, "_RangeInFrontOfCamera", float.MaxValue);
             }
             else
 #endif
             {
-                cmd.SetComputeFloatParam(shader, "_IndirectScale", giSettings.indirectMultiplier.value);
+                cmd.SetComputeFloatParam(shader, "_IndirectScale", mixedLightMode != ProbeVolumeDynamicGIMixedLightMode.MixedOnly ? giSettings.indirectMultiplier.value : 0f);
+                cmd.SetComputeFloatParam(shader, "_MixedLightingMultiplier", mixedLightMode != ProbeVolumeDynamicGIMixedLightMode.ForceRealtime ? giSettings.indirectMultiplier.value : 0f);
                 cmd.SetComputeFloatParam(shader, "_BakedEmissionMultiplier", giSettings.bakedEmissionMultiplier.value);
-                cmd.SetComputeFloatParam(shader, "_MixedLightingMultiplier", 1f);
                 infBounce = infiniteBounces ? giSettings.infiniteBounce.value : 0f;
+
+                cmd.SetComputeFloatParam(shader, "_RangeBehindCamera", giSettings.rangeBehindCamera.value);
+                cmd.SetComputeFloatParam(shader, "_RangeInFrontOfCamera", giSettings.rangeInFrontOfCamera.value);
             }
             
-            cmd.SetComputeFloatParam(shader, "_RangeBehindCamera", giSettings.rangeBehindCamera.value);
-            cmd.SetComputeFloatParam(shader, "_RangeInFrontOfCamera", giSettings.rangeInFrontOfCamera.value);
-
             cmd.SetComputeBufferParam(shader, kernel, "_PreviousRadianceCacheAxis", propagationPipelineData.GetReadRadianceCacheAxis());
             cmd.SetComputeIntParam(shader, "_RadianceCacheAxisCount", propagationPipelineData.radianceCacheAxis0.count);
             cmd.SetComputeBufferParam(shader, kernel, "_HitRadianceCacheAxis", propagationPipelineData.hitRadianceCache);

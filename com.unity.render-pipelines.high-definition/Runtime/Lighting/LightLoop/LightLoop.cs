@@ -2509,6 +2509,7 @@ namespace UnityEngine.Rendering.HighDefinition
 
             var debugLightFilter = debugDisplaySettings.GetDebugLightFilterMode();
             var hasDebugLightFilter = debugLightFilter != DebugLightFilterMode.None;
+            var forceRealtimeForMixedLights = hdCamera.frameSettings.probeVolumeDynamicGIMixedLightMode == ProbeVolumeDynamicGIMixedLightMode.ForceRealtime;
 
             // 1. Count the number of lights and sort all lights by category, type and volume - This is required for the fptl/cluster shader code
             // If we reach maximum of lights available on screen, then we discard the light.
@@ -2561,6 +2562,7 @@ namespace UnityEngine.Rendering.HighDefinition
                     {
                         additionalData.mixedDynamicGI = mixedDynamicGI;
                         UnityEditor.EditorUtility.SetDirty(additionalData);
+                        UnityEditor.PrefabUtility.RecordPrefabInstancePropertyModifications(additionalData);
                     }
                     
                     if (!mixedDynamicGI)
@@ -2569,7 +2571,7 @@ namespace UnityEngine.Rendering.HighDefinition
                 else
 #endif
                 {
-                    if (additionalData.mixedDynamicGI)
+                    if (!forceRealtimeForMixedLights && additionalData.mixedDynamicGI)
                         continue;
                 }
 
@@ -3209,7 +3211,8 @@ namespace UnityEngine.Rendering.HighDefinition
                 }
 
                 bool dynamicGIEnabled = hdCamera.frameSettings.IsEnabled(FrameSettingsField.ProbeVolumeDynamicGI);
-                if (dynamicGIEnabled)
+                bool mixedLightsOnly = hdCamera.frameSettings.probeVolumeDynamicGIMixedLightMode == ProbeVolumeDynamicGIMixedLightMode.MixedOnly;
+                if (dynamicGIEnabled && !mixedLightsOnly)
                 {
                     int processedLightCount = PreprocessDynamicGILights(hdCamera, cullResults, debugDisplaySettings, aovRequest);
                     PrepareDynamicGIGPULightdata(cmd, hdCamera, cullResults, processedLightCount);
