@@ -610,7 +610,7 @@ namespace UnityEngine.Rendering.HighDefinition
             float infBounce;
 
 #if UNITY_EDITOR
-            if (ProbeVolume.prepareMixedLights)
+            if (ProbeVolume.preparingMixedLights)
             {
                 cmd.SetComputeFloatParam(shader, "_IndirectScale", 1f);
                 cmd.SetComputeFloatParam(shader, "_MixedLightingMultiplier", 0f);

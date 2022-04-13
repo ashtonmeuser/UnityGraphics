@@ -1619,12 +1619,16 @@ namespace UnityEngine.Rendering.HighDefinition
             return new Vector4(probeOctahedralDepthScale2D.x, probeOctahedralDepthScale2D.y, probeOctahedralDepthIndex2D.x, probeOctahedralDepthIndex2D.y);
         }
 
-        static bool s_PrepareMixedLights;
-        internal static bool prepareMixedLights
-        {
-            get => s_PrepareMixedLights;
-            set => s_PrepareMixedLights = value;
-        }
+        internal static bool preparingMixedLights;
 #endif
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        internal static void ReplaceValueIfPreparingMixedLights<T>(ref T value, T replacement)
+        {
+#if UNITY_EDITOR
+            if (preparingMixedLights)
+                value = replacement;
+#endif
+        }
     }
 } // UnityEngine.Experimental.Rendering.HDPipeline

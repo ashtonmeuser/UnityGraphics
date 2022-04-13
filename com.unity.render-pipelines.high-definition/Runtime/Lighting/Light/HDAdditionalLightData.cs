@@ -2002,8 +2002,11 @@ namespace UnityEngine.Rendering.HighDefinition
             m_WillRenderShadowMap &= cullResults.GetShadowCasterBounds(lightIndex, out bounds);
             // When creating a new light, at the first frame, there is no AdditionalShadowData so we can't really render shadows
             m_WillRenderShadowMap &= shadowDimmer > 0;
+
             // If the shadow is too far away, we don't render it
-            m_WillRenderShadowMap &= processedLight.lightType == HDLightType.Directional || processedLight.distanceToCamera < shadowFadeDistance;
+            var withinDistanceOrDirectional = processedLight.lightType == HDLightType.Directional || processedLight.distanceToCamera < shadowFadeDistance;
+            ProbeVolume.ReplaceValueIfPreparingMixedLights(ref withinDistanceOrDirectional, true);
+            m_WillRenderShadowMap &= withinDistanceOrDirectional;
 
             if (processedLight.lightType == HDLightType.Area && areaLightShape != AreaLightShape.Rectangle)
             {
@@ -2104,6 +2107,7 @@ namespace UnityEngine.Rendering.HighDefinition
                 float distance01 = Mathf.Clamp01(Vector3.Distance(camera.transform.position, visibleLight.GetPosition()) / shadowSettings.maxShadowDistance.value);
                 // ease out and invert the curve, give more importance to closer distances
                 distance01 = 1.0f - Mathf.Pow(distance01, 2);
+                ProbeVolume.ReplaceValueIfPreparingMixedLights(ref distance01, 1.0f);
 
                 // normalized ratio between light range and distance 
                 float range01 = Mathf.Clamp01(visibleLight.range / Vector3.Distance(camera.transform.position, visibleLight.GetPosition()));

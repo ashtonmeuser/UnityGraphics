@@ -1692,7 +1692,9 @@ namespace UnityEngine.Rendering.HighDefinition
                 }
             }
 
-            float shadowDistanceFade         = HDUtils.ComputeLinearDistanceFade(processedData.distanceToCamera, Mathf.Min(shadowSettings.maxShadowDistance.value, additionalLightData.shadowFadeDistance));
+            float shadowDistanceFade = HDUtils.ComputeLinearDistanceFade(processedData.distanceToCamera, Mathf.Min(shadowSettings.maxShadowDistance.value, additionalLightData.shadowFadeDistance));
+            ProbeVolume.ReplaceValueIfPreparingMixedLights(ref shadowDistanceFade, 1f);
+
             lightData.shadowDimmer           = shadowDistanceFade * additionalLightData.shadowDimmer;
             lightData.volumetricShadowDimmer = shadowDistanceFade * additionalLightData.volumetricShadowDimmer;
             GetContactShadowMask(additionalLightData, contactShadowsScalableSetting, hdCamera, isRasterization: isRasterization, ref lightData.contactShadowMask, ref lightData.isRayTracedContactShadow);
@@ -2247,6 +2249,7 @@ namespace UnityEngine.Rendering.HighDefinition
         void LightLoopUpdateCullingParameters(ref ScriptableCullingParameters cullingParams, HDCamera hdCamera)
         {
             var shadowMaxDistance = hdCamera.volumeStack.GetComponent<HDShadowSettings>().maxShadowDistance.value;
+            ProbeVolume.ReplaceValueIfPreparingMixedLights(ref shadowMaxDistance, float.MaxValue);
             m_ShadowManager.UpdateCullingParameters(ref cullingParams, shadowMaxDistance);
 
             // In HDRP we don't need per object light/probe info so we disable the native code that handles it.
@@ -2392,6 +2395,8 @@ namespace UnityEngine.Rendering.HighDefinition
                                                     ref processedData.lightCategory, ref processedData.gpuLightType, ref processedData.lightVolumeType);
 
             processedData.lightDistanceFade = processedData.gpuLightType == GPULightType.Directional ? 1.0f : HDUtils.ComputeLinearDistanceFade(processedData.distanceToCamera, additionalLightData.fadeDistance);
+            ProbeVolume.ReplaceValueIfPreparingMixedLights(ref processedData.lightDistanceFade, 1.0f);
+
             processedData.volumetricDistanceFade = processedData.gpuLightType == GPULightType.Directional ? 1.0f : HDUtils.ComputeLinearDistanceFade(processedData.distanceToCamera, additionalLightData.volumetricFadeDistance);
             processedData.isBakedShadowMask = IsBakedShadowMaskLight(lightComponent);
         }
@@ -2554,7 +2559,7 @@ namespace UnityEngine.Rendering.HighDefinition
                     continue;
                 
 #if UNITY_EDITOR
-                if (ProbeVolume.prepareMixedLights)
+                if (ProbeVolume.preparingMixedLights)
                 {
                     var mixedDynamicGI = light.light.lightmapBakeType == LightmapBakeType.Mixed;
                     
@@ -3211,8 +3216,9 @@ namespace UnityEngine.Rendering.HighDefinition
                 }
 
                 bool dynamicGIEnabled = hdCamera.frameSettings.IsEnabled(FrameSettingsField.ProbeVolumeDynamicGI);
-                bool mixedLightsOnly = hdCamera.frameSettings.probeVolumeDynamicGIMixedLightMode == ProbeVolumeDynamicGIMixedLightMode.MixedOnly;
-                if (dynamicGIEnabled && !mixedLightsOnly)
+                bool dynamicGINeedsLights = hdCamera.frameSettings.probeVolumeDynamicGIMixedLightMode != ProbeVolumeDynamicGIMixedLightMode.MixedOnly;
+                ProbeVolume.ReplaceValueIfPreparingMixedLights(ref dynamicGINeedsLights, true);
+                if (dynamicGIEnabled && dynamicGINeedsLights)
                 {
                     int processedLightCount = PreprocessDynamicGILights(hdCamera, cullResults, debugDisplaySettings, aovRequest);
                     PrepareDynamicGIGPULightdata(cmd, hdCamera, cullResults, processedLightCount);

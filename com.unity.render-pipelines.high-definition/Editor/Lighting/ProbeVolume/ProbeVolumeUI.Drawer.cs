@@ -121,8 +121,8 @@ namespace UnityEditor.Rendering.HighDefinition
             
             EditorGUILayout.Space();
             
-            ProbeVolume.prepareMixedLights = EditorGUILayout.Toggle(Styles.k_PrepareMixedLightsText, ProbeVolume.prepareMixedLights);
-            GUI.enabled = ProbeVolume.prepareMixedLights;
+            ProbeVolume.preparingMixedLights = EditorGUILayout.Toggle(Styles.k_PrepareMixedLightsText, ProbeVolume.preparingMixedLights);
+            GUI.enabled = ProbeVolume.preparingMixedLights;
 
             if (GUILayout.Button(Styles.k_BakeMixedLightsText))
             {
