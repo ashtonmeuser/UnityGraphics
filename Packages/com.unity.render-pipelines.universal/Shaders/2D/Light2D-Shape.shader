@@ -13,6 +13,7 @@ Shader "Hidden/Light2D-Shape"
         Pass
         {
             Blend[_SrcBlend][_DstBlend]
+            BlendOp Max
             ZWrite Off
             Cull Off
 

@@ -8,7 +8,7 @@ half _HDREmulationScale;
 half _UseSceneLighting;
 half4 _RendererColor;
 
-half4 CombinedShapeLightShared(in SurfaceData2D surfaceData, in InputData2D inputData)
+half4 CombinedShapeLightShared(in SurfaceData2D surfaceData, in InputData2D inputData, in half minLumas = 0)
 {
     #if defined(DEBUG_DISPLAY)
     half4 debugColor = 0;
@@ -94,15 +94,18 @@ half4 CombinedShapeLightShared(in SurfaceData2D surfaceData, in InputData2D inpu
 #endif
 
     half4 finalOutput;
+    half luminance = 1;
 #if !USE_SHAPE_LIGHT_TYPE_0 && !USE_SHAPE_LIGHT_TYPE_1 && !USE_SHAPE_LIGHT_TYPE_2 && ! USE_SHAPE_LIGHT_TYPE_3
     finalOutput = color;
 #else
     half4 finalModulate = shapeLight0Modulate + shapeLight1Modulate + shapeLight2Modulate + shapeLight3Modulate;
     half4 finalAdditve = shapeLight0Additive + shapeLight1Additive + shapeLight2Additive + shapeLight3Additive;
+    half3 weights = half3(0.2126, 0.7152, 0.0722);
+    luminance = dot(finalModulate + finalAdditve, weights);
     finalOutput = _HDREmulationScale * (color * finalModulate + finalAdditve);
 #endif
 
-    finalOutput.a = alpha;
+    finalOutput.a = alpha * (luminance >= minLumas ? 1 : 0);
     finalOutput = lerp(color, finalOutput, _UseSceneLighting);
 
     return max(0, finalOutput);

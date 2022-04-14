@@ -5,6 +5,7 @@ Shader "Universal Render Pipeline/2D/Sprite-Lit-Default"
         _MainTex("Diffuse", 2D) = "white" {}
         _MaskTex("Mask", 2D) = "white" {}
         _NormalMap("Normal Map", 2D) = "bump" {}
+        _MinimumLuminance("Minimum Luminance", Range(0.0, 1.0)) = 0.0
 
         // Legacy properties. They're here so that materials using this shader can gracefully fallback to the legacy sprite shader.
         [HideInInspector] _Color("Tint", Color) = (1,1,1,1)
@@ -66,6 +67,7 @@ Shader "Universal Render Pipeline/2D/Sprite-Lit-Default"
             SAMPLER(sampler_MaskTex);
             half4 _MainTex_ST;
             float4 _Color;
+            half _MinimumLuminance;
 
             #if USE_SHAPE_LIGHT_TYPE_0
             SHAPE_LIGHT(0)
@@ -112,7 +114,7 @@ Shader "Universal Render Pipeline/2D/Sprite-Lit-Default"
                 InitializeSurfaceData(main.rgb, main.a, mask, surfaceData);
                 InitializeInputData(i.uv, i.lightingUV, inputData);
 
-                return CombinedShapeLightShared(surfaceData, inputData);
+                return CombinedShapeLightShared(surfaceData, inputData, _MinimumLuminance);
             }
             ENDHLSL
         }
